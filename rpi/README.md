@@ -36,13 +36,14 @@ The configuration of the Raspberry Pi is automated with the included [setup scri
 To start the setup ssh into the Raspberry Pi:
 
 ```shell
-ssh simon@<pi ip>
+ssh simon@column.local
 ```
+> Replace `column.local` with the Raspberry Pi IP if needed.
 
 then run the following command:
 
 ```shell
-curl https://github.com/IanLuites/Simons-Column/raw/refs/heads/main/rpi/setup.sh | sh
+curl -L https://github.com/IanLuites/Simons-Column/raw/refs/heads/main/rpi/setup.sh | sh
 ```
 
 This will run the above mentioned setup script.
