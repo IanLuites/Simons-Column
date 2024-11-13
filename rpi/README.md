@@ -2,6 +2,21 @@
 
 Raspberry PI controlling the column lights.
 
+## Configuration
+
+### WiFi Access Point
+
+The Raspberry Pi will by default host a WiFi access point with name `Simon's Column` and password `Fogarty!`.
+The access point will share internet access through the Ethernet port if connected.
+
+To change these settings before setup edit the configuration in [setup.sh](setup.sh) un `# Configuration > ## WiFi`.
+
+After setup edit `/etc/hostapd/hostapd.conf` and restart with:
+
+```shell
+sudo systemctl restart hostapd.service
+```
+
 ## Setup
 
 ### Flash Raspberry Pi OS image
@@ -38,6 +53,7 @@ To start the setup ssh into the Raspberry Pi:
 ```shell
 ssh simon@column.local
 ```
+
 > Replace `column.local` with the Raspberry Pi IP if needed.
 
 then run the following command:
