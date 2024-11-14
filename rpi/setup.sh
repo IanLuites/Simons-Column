@@ -1,6 +1,12 @@
 #!/usr/bin/env sh
 
 # Configuration
+## General
+GITHUB_REPO=https://github.com/IanLuites/Simons-Column
+
+## Python
+PYTHON_DIST=/usr/lib/python3/dist-packages
+
 ## WiFi access point
 WIFI_COUNTRY=US
 WIFI_SSID="Simon's Column"
@@ -14,6 +20,11 @@ export DEBIAN_FRONTEND=noninteractive
 sudo apt update
 sudo apt upgrade -q -y
 sudo apt dist-upgrade -q -y
+
+# Install Python helper
+sudo mkdir -p "${PYTHON_DIST}/lights"
+curl -LsSf "${GITHUB_REPO}/raw/refs/heads/main/python/lights/__init__.py" \
+  | sudo tee 1> /dev/null "${PYTHON_DIST}/lights/__init__.py"
 
 # Setup WiFi
 sudo raspi-config nonint do_wifi_country "${WIFI_COUNTRY}"
