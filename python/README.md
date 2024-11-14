@@ -15,7 +15,7 @@ pattern = column.pattern()
 
 # Turn light 4 and 14 on
 pattern[3] = True
-pattern[14] = True
+pattern[13] = True
 
 # Write the pattern to the lights
 column.set(pattern)
