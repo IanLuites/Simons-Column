@@ -11,7 +11,7 @@ import time
 column = lights.connect(lights = 24)
 
 # Create a new pattern (all lights off)
-pattern = lights.pattern()
+pattern = column.pattern()
 
 # Turn light 4 and 14 on
 pattern[3] = True
