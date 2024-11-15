@@ -3,5 +3,9 @@
 version = 3
 
 [[package]]
+name = "emulator"
+version = "0.0.1"
+
+[[package]]
 name = "tpic6c596"
 version = "0.0.1"
