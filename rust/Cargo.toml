@@ -1,9 +1,10 @@
 [workspace]
   default-members = []
-  members = []
+  members = ["crates/*"]
   resolver = "2"
 
   [workspace.dependencies]
+    tpic6c596 = { path = "crates/tpic6c596" }
 
   [workspace.package]
     authors = ["Ian Luites <ian@luites.com>"]
