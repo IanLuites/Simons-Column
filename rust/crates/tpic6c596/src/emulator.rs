@@ -220,6 +220,18 @@ impl Emulator {
     }
 }
 
+impl crate::Connector for Emulator {
+    #[inline]
+    fn get(&self, pin: Pin) -> bool {
+        self.get_pin(pin)
+    }
+
+    #[inline]
+    fn set(&mut self, pin: Pin, state: bool) {
+        self.set_pin(pin, state);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
