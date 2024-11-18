@@ -1,0 +1,51 @@
+[workspace]
+  default-members = []
+  members = ["bin/*", "crates/*"]
+  resolver = "2"
+
+  [workspace.dependencies]
+    tpic6c596 = { path = "crates/tpic6c596" }
+
+    # CLI
+    clap = { version = "4.5.21", features = ["derive"] }
+
+  [workspace.package]
+    authors = ["Ian Luites <ian@luites.com>"]
+    documentation = "https://github.com/IanLuites/Simons-Column"
+    edition = "2021"
+    homepage = "https://github.com/IanLuites/Simons-Column"
+    license = "All Rights Reserved"
+    readme = "./README.md"
+    repository = "https://github.com/IanLuites/Simons-Column"
+
+  [workspace.lints.clippy]
+    nursery = { level = "warn", priority = -1 }
+    pedantic = { level = "warn", priority = -1 }
+    # restriction = { level = "warn" }
+    missing-docs-in-private-items = "warn"
+
+  [workspace.lints.rust]
+    missing-docs = "warn"
+    missing_debug_implementations = "warn"
+    unsafe_code = "warn"
+
+  [workspace.lints.rustdoc]
+    # missing_doc_code_examples = "warn"
+    # missing_docs = "warn"
+    private-doc-tests = "warn"
+    unescaped-backticks = "warn"
+
+[profile.dev.package."*"]
+  opt-level = 3
+
+[profile.release]
+  codegen-units = 1
+  debug = false
+  incremental = false
+  lto = true
+  opt-level = 3
+
+  # Reduce size
+  # opt-level = "z"
+  panic = "abort"
+  strip = true

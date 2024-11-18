@@ -1,0 +1,21 @@
+[package]
+  description = "Emulator for a light column with TPIC6C596 shift registers."
+  name = "emulator"
+  version = "0.0.1"
+
+  authors.workspace = true
+  documentation.workspace = true
+  edition.workspace = true
+  homepage.workspace = true
+  license.workspace = true
+  readme.workspace = true
+  repository.workspace = true
+
+[lints]
+  workspace = true
+
+[dependencies]
+  tpic6c596 = { workspace = true }
+
+  clap = { workspace = true }
+  ctrlc = { version = "3.4.5" }
