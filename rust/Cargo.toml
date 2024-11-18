@@ -6,6 +6,9 @@
   [workspace.dependencies]
     tpic6c596 = { path = "crates/tpic6c596" }
 
+    # CLI
+    clap = { version = "4.5.21", features = ["derive"] }
+
   [workspace.package]
     authors = ["Ian Luites <ian@luites.com>"]
     documentation = "https://github.com/IanLuites/Simons-Column"
