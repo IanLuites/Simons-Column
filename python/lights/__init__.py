@@ -2,9 +2,82 @@
 Lights helpers.
 """
 
-import RPi.GPIO as GPIO
+import sys
+
+if sys.version_info[0] < 3:
+    raise Exception("Python 3 is required.")
+
+import socket as sockets
 import time
-from typing import Final, Literal
+from typing import Final, Literal, Protocol
+from abc import abstractmethod
+
+
+class Pins(Protocol):
+    @abstractmethod
+    def set_data(self, on: Literal[0, 1]):
+        raise NotImplementedError
+
+    @abstractmethod
+    def set_clock(self, on: Literal[0, 1]):
+        raise NotImplementedError
+
+    @abstractmethod
+    def set_latch(self, on: Literal[0, 1]):
+        raise NotImplementedError
+
+    @abstractmethod
+    def set_control(self, on: Literal[0, 1]):
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_control(self) -> Literal[0, 1]:
+        raise NotImplementedError
+
+
+PI_SUPPORTED = False
+try:
+    import RPi.GPIO as GPIO
+
+    PI_SUPPORTED = True
+
+    class RPiPins(Pins):
+        def __init__(
+            self,
+            data_pin: int = 17,
+            latch_pin: int = 27,
+            clock_pin: int = 22,
+            control_pin: int = 23,
+            chain: int = 1,
+            mode: Literal[10, 11] = GPIO.BCM,
+        ):
+            """
+            Initialize the RPi GPIO pins for controlling the lights.
+
+            Args:
+              data_pin (int): The GPIO pin number for data. Default is 17.
+              latch_pin (int): The GPIO pin number for latch. Default is 27.
+              clock_pin (int): The GPIO pin number for clock. Default is 22.
+              control_pin (int): The GPIO pin number for control. Default is 23.
+              mode (Literal[10, 11]): The GPIO mode to use. Default is GPIO.BCM.
+
+            """
+            self.data_pin = data_pin
+            self.latch_pin = latch_pin
+            self.clock_pin = clock_pin
+            self.control_pin = control_pin
+            self.chain = chain
+
+            GPIO.setmode(mode)
+            GPIO.setup(self.data_pin, GPIO.OUT)
+            GPIO.setup(self.latch_pin, GPIO.OUT)
+            GPIO.setup(self.clock_pin, GPIO.OUT)
+            GPIO.setup(self.control_pin, GPIO.OUT)
+
+except ImportError:
+    import warnings
+
+    warnings.warn("RPi not supported on this platform.")
 
 
 class TPIC6C596:
@@ -23,36 +96,18 @@ class TPIC6C596:
 
     def __init__(
         self,
-        data_pin: int = 17,
-        latch_pin: int = 27,
-        clock_pin: int = 22,
-        control_pin: int = 23,
+        pins: Pins,
         chain: int = 1,
-        mode: Literal[10, 11] = GPIO.BCM,
     ):
         """
         Initialize the GPIO pins for controlling the lights.
 
         Args:
-          data_pin (int): The GPIO pin number for data. Default is 17.
-          latch_pin (int): The GPIO pin number for latch. Default is 27.
-          clock_pin (int): The GPIO pin number for clock. Default is 22.
-          control_pin (int): The GPIO pin number for control. Default is 23.
           chain (int): The number of chained devices. Default is 1.
-          mode (Literal[10, 11]): The GPIO mode to use. Default is GPIO.BCM.
 
         """
-        self.data_pin = data_pin
-        self.latch_pin = latch_pin
-        self.clock_pin = clock_pin
-        self.control_pin = control_pin
+        self.pins = pins
         self.chain = chain
-
-        GPIO.setmode(mode)
-        GPIO.setup(self.data_pin, GPIO.OUT)
-        GPIO.setup(self.latch_pin, GPIO.OUT)
-        GPIO.setup(self.clock_pin, GPIO.OUT)
-        GPIO.setup(self.control_pin, GPIO.OUT)
 
     def is_on(self) -> bool:
         """
@@ -61,19 +116,19 @@ class TPIC6C596:
         Returns:
           bool: True if the lights are on, False otherwise.
         """
-        return GPIO.input(self.control_pin)
+        return self.pins.get_control()
 
     def on(self):
         """
         Turns the lights on by setting the control pin to HIGH.
         """
-        GPIO.output(self.control_pin, GPIO.HIGH)
+        self.pins.set_control(1)
 
     def off(self):
         """
         Turns off the lights by setting the control pin to LOW.
         """
-        GPIO.output(self.control_pin, GPIO.LOW)
+        self.pins.set_control(0)
 
     def shift_high(self):
         """
@@ -95,17 +150,17 @@ class TPIC6C596:
           data (int): The data to be shifted out, bit by bit.
           count (int): The number of bits to shift.
         """
-        GPIO.output(self.latch_pin, GPIO.LOW)
+        self.pins.set_latch(0)
 
         for _ in range(count):
-            GPIO.output(self.clock_pin, GPIO.LOW)
-            GPIO.output(self.data_pin, data & 1)
-            GPIO.output(self.clock_pin, GPIO.HIGH)
+            self.pins.set_clock(0)
+            self.pins.set_data(data & 1)
+            self.pins.set_clock(1)
             data >>= 1
 
-        GPIO.output(self.latch_pin, GPIO.HIGH)
+        self.pins.set_latch(1)
         time.sleep(0.0001)
-        GPIO.output(self.latch_pin, GPIO.LOW)
+        self.pins.set_latch(0)
 
     def write(self, data: int):
         """
@@ -270,37 +325,79 @@ class Lights:
         return Pattern(self.lights, state=state)
 
 
-def connect(
-    lights: int,
-    data_pin: int = 17,
-    latch_pin: int = 27,
-    clock_pin: int = 22,
-    control_pin: int = 23,
-    mode: Literal[10, 11] = GPIO.BCM,
-    chain: int | None = None,
-) -> Lights:
-    """
-    Connects to a series of lights using a shift register.
+if PI_SUPPORTED:
 
-    Args:
-      lights (int): The number of lights to control.
-      data_pin (int, optional): The GPIO pin connected to the data input of the shift register. Defaults to 17.
-      latch_pin (int, optional): The GPIO pin connected to the latch input of the shift register. Defaults to 27.
-      clock_pin (int, optional): The GPIO pin connected to the clock input of the shift register. Defaults to 22.
-      control_pin (int, optional): The GPIO pin connected to the control input of the shift register. Defaults to 23.
-      mode (Literal[10, 11], optional): The GPIO mode to use. Defaults to GPIO.BCM.
-      chain (int | None, optional): The number of chained shift registers. If None, it is calculated as lights // 8. Defaults to None.
+    def connect(
+        lights: int,
+        data_pin: int = 17,
+        latch_pin: int = 27,
+        clock_pin: int = 22,
+        control_pin: int = 23,
+        mode: Literal[10, 11] = GPIO.BCM,
+        chain: int | None = None,
+    ) -> Lights:
+        """
+        Connects to a series of lights using a shift register.
 
-    Returns:
-      Lights: An instance of the Lights class configured with the specified shift register and number of lights.
-    """
-    shift_register: TPIC6C596 = TPIC6C596(
-        data_pin=data_pin,
-        latch_pin=latch_pin,
-        clock_pin=clock_pin,
-        control_pin=control_pin,
-        mode=mode,
-        chain=chain or lights // 8,
-    )
+        Args:
+          lights (int): The number of lights to control.
+          data_pin (int, optional): The GPIO pin connected to the data input of the shift register. Defaults to 17.
+          latch_pin (int, optional): The GPIO pin connected to the latch input of the shift register. Defaults to 27.
+          clock_pin (int, optional): The GPIO pin connected to the clock input of the shift register. Defaults to 22.
+          control_pin (int, optional): The GPIO pin connected to the control input of the shift register. Defaults to 23.
+          mode (Literal[10, 11], optional): The GPIO mode to use. Defaults to GPIO.BCM.
+          chain (int | None, optional): The number of chained shift registers. If None, it is calculated as lights // 8. Defaults to None.
 
-    return Lights(shift_register=shift_register, lights=lights)
+        Returns:
+          Lights: An instance of the Lights class configured with the specified shift register and number of lights.
+        """
+        shift_register: TPIC6C596 = TPIC6C596(
+            pins=RPiPins(
+                data_pin=data_pin,
+                latch_pin=latch_pin,
+                clock_pin=clock_pin,
+                control_pin=control_pin,
+                mode=mode,
+            ),
+            chain=chain or lights // 8,
+        )
+
+        return Lights(shift_register=shift_register, lights=lights)
+
+
+# Check whether unix sockets are supported.
+if hasattr(sockets, "AF_UNIX"):
+
+    class Emulator(Pins):
+        def __init__(self, socket: str):
+            self.socket = sockets.socket(sockets.AF_UNIX, sockets.SOCK_DGRAM)
+            self.address = socket
+            self.control = 0
+
+        def set_clock(self, on: Literal[0] | Literal[1]):
+            self.socket.sendto(bytes([on << 7 | 3]), self.address)
+
+        def set_data(self, on: Literal[0] | Literal[1]):
+            self.socket.sendto(bytes([on << 7 | 1]), self.address)
+
+        def set_control(self, on: Literal[0] | Literal[1]):
+            self.control = on
+            self.socket.sendto(bytes([on << 7 | 2]), self.address)
+
+        def set_latch(self, on: Literal[0] | Literal[1]):
+            self.socket.sendto(bytes([on << 7 | 4]), self.address)
+
+        def get_control(self) -> Literal[0] | Literal[1]:
+            return self.control
+
+    def connect_to_emulator(
+        lights: int,
+        socket: str = "/tmp/tpic6c596-emulator.sock",
+        chain: int | None = None,
+    ) -> Lights:
+        shift_register: TPIC6C596 = TPIC6C596(
+            pins=Emulator(socket=socket),
+            chain=chain or lights // 8,
+        )
+
+        return Lights(shift_register=shift_register, lights=lights)
