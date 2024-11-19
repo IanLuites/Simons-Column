@@ -671,6 +671,7 @@ version = "0.0.1"
 dependencies = [
  "axum",
  "clap",
+ "serde",
  "tokio",
  "tracing",
  "tracing-subscriber",
