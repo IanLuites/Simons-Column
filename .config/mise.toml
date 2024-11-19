@@ -5,11 +5,29 @@
   rust = "1.82"
 
 [tasks]
+  [tasks."target:rpi"]
+    description = "Compile target for RPi 3, 4, and 5"
+    hide = true
+
+    run = 'rustup target add aarch64-unknown-linux-gnu'
+
+
+  [tasks."compile:server:rpi"]
+    description = "Compile the light server for RPi 3, 4, and 5"
+
+    dir = "../rust"
+    run = 'cargo build -p server --target aarch64-unknown-linux-gnu {{option(name="mode",default="--release")}}'
+
+    depends = ["target:rpi"]
+    outputs = ["rust/target/aarch64-unknown-linux-gnu/release/server"]
+    sources = ["rust/bin/server"]
+
+
   [tasks."compile:emulator"]
     description = "Compile the TPIC6C596 emulator"
     hide = true
 
-    dir = "rust"
+    dir = "../rust"
     run = "cargo build --release -p emulator"
 
     outputs = ["rust/target/release/emulator"]
@@ -18,11 +36,13 @@
   [tasks.emulator]
     description = "TPIC6C596 emulator"
 
-    run = "rust/target/release/emulator"
+    dir = '../rust'
+    run = "target/release/emulator"
 
     depends = ["compile:emulator"]
 
   [tasks.example]
     description = "Run python example."
 
-    run = 'python/examples/{{arg(name="example")}}.py'
+    dir = '../python'
+    run = 'examples/{{arg(name="example")}}.py'
