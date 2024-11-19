@@ -1,3 +1,6 @@
+[env]
+  RUST_LOG = "info"
+
 [tools]
   # For now keep tools in repository root.
   # Potential move these to the respective python/, rust/ directories.

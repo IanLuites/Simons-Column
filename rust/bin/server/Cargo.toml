@@ -20,3 +20,7 @@
   # Server
   axum = { version = "0.7.7" }
   tokio = { version = "1.41.1", features = ["rt-multi-thread"] }
+
+  # Instrumentation
+  tracing = { workspace = true }
+  tracing-subscriber = { workspace = true }
