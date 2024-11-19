@@ -21,3 +21,8 @@
     run = "rust/target/release/emulator"
 
     depends = ["compile:emulator"]
+
+  [tasks.example]
+    description = "Run python example."
+
+    run = 'python/examples/{{arg(name="example")}}.py'

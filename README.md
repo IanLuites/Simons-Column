@@ -35,3 +35,13 @@ With mise install run:
 Use `mise run emulator` to run an emulator for TPIC6C596 shift registers.
 
 > Pass `--help` to list options.
+
+### Examples
+
+To run the python examples us the emulator
+and then run any example from the [python/examples](python/examples/) directory.
+
+```shell
+mise run emulator # In background with `&` or different terminal.
+mise run example fill
+```
