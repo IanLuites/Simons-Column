@@ -1,10 +1,17 @@
 //! Server config
 
+use std::time::Duration;
+
 use clap::Parser;
 
 /// Server config
 #[derive(Debug, Parser)]
 pub struct Config {
+    // Orchestrator
+    /// Choreography timeout in seconds.
+    #[arg(short, long, default_value_t = 60.0)]
+    timeout: f64,
+
     // Web
     /// Bind address
     #[arg(short, long, default_value = "0.0.0.0")]
@@ -28,5 +35,11 @@ impl Config {
     #[must_use]
     pub fn addr(&self) -> String {
         format!("{}:{}", self.address, self.port)
+    }
+
+    /// Choreography timeout.
+    #[must_use]
+    pub fn timeout(&self) -> Duration {
+        Duration::from_secs_f64(self.timeout)
     }
 }

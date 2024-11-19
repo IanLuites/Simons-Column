@@ -6,10 +6,13 @@ use axum::{
     Json, Router,
 };
 
-use crate::choreography::{Choreography, Format};
+use crate::{
+    choreography::{Choreography, Format},
+    web::state::WebState,
+};
 
 /// V1 routes
-pub fn v1() -> Router {
+pub fn v1() -> Router<WebState> {
     Router::new()
         .route("/", get(list))
         .route("/", post(create))

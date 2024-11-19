@@ -1,34 +1,57 @@
 //! Orchestrator API managing playing of choreography
 
-use axum::{routing::get, Json, Router};
+use axum::{extract::State, routing::get, Json, Router};
+
+use crate::{
+    orchestrator::{self, Info},
+    web::state::WebState,
+};
 
 /// V1 routes
-pub fn v1() -> Router {
+pub fn v1() -> Router<WebState> {
     Router::new().route("/", get(status).post(start).delete(stop))
 }
 
 /// Orchestrator status
-async fn status() -> Json<Status> {
-    Json(Status { current: None })
+async fn status(State(state): State<WebState>) -> Json<Status> {
+    state.orchestrator().info().into()
 }
 
 /// Start playing a choreography
-async fn start(Json(start): Json<StartRequest>) -> Json<Status> {
-    Json(Status {
-        current: Some(start.choreography),
-    })
+async fn start(State(state): State<WebState>, Json(start): Json<StartRequest>) -> Json<Status> {
+    state
+        .orchestrator()
+        .start(todo!("Find {}", start.choreography))
+        .into()
 }
 
 /// Stop a playing choreography
-async fn stop() -> Json<Status> {
-    Json(Status { current: None })
+async fn stop(State(state): State<WebState>) -> Json<Status> {
+    state.orchestrator().stop().into()
+}
+
+impl From<Info> for Json<Status> {
+    fn from(info: Info) -> Self {
+        Self(Status {
+            choreography: info.choreography().into(),
+            status: info.status(),
+            log: info.log(),
+        })
+    }
 }
 
 /// Status info
 #[derive(Debug, serde::Serialize)]
 pub struct Status {
     /// Currently playing choreography.
-    current: Option<String>,
+    choreography: String,
+
+    /// Status.
+    #[allow(clippy::struct_field_names)]
+    status: orchestrator::Status,
+
+    /// Choreography log.
+    log: String,
 }
 
 #[derive(Debug, serde::Deserialize)]
