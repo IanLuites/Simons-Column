@@ -1,5 +1,7 @@
 //! Server to control and manage Simon's Column lights.
 
+mod choreography;
+
 mod config;
 use config::Config;
 

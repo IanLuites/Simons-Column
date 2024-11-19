@@ -4,6 +4,7 @@ use axum::Router;
 
 use crate::config::Config;
 
+mod choreography;
 mod orchestrator;
 mod status;
 
@@ -16,5 +17,7 @@ pub fn router(_config: &Config) -> Router {
 
 /// V1 routes
 fn v1() -> Router {
-    Router::new().nest("/orchestrator", orchestrator::v1())
+    Router::new()
+        .nest("/choreography", choreography::v1())
+        .nest("/orchestrator", orchestrator::v1())
 }
