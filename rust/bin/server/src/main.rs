@@ -3,8 +3,12 @@
 mod config;
 use config::Config;
 
-fn main() {
-    let _config = Config::load();
+mod web;
+
+#[tokio::main]
+async fn main() {
+    let config = Config::load();
 
     println!("Hello, world!");
+    web::serve(&config).await.expect("serve web requests");
 }
