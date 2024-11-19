@@ -11,8 +11,10 @@ if True:
 import lights
 import time
 
+LIGHTS = 24
+
 # Connect to lights
-column = lights.connect_to_emulator(lights=24)
+column = lights.connect_to_emulator(lights=LIGHTS)
 
 # Create a new pattern (all lights off)
 pattern = column.pattern()
@@ -24,9 +26,9 @@ column.set(pattern)
 column.on()
 
 # Start running lights
-for x in range(24):
+for x in range(LIGHTS):
     last = x
-    for y in range(x, 24):
+    for y in range(x, LIGHTS):
         pattern[last] = False
         pattern[y] = True
         last = y
@@ -34,10 +36,10 @@ for x in range(24):
         column.set(pattern)
         time.sleep(0.01)
 
-    for y in range(24 - x):
+    for y in range(LIGHTS - x):
         pattern[last] = False
-        pattern[23 - y] = True
-        last = 23 - y
+        last = (LIGHTS - 1) - y
+        pattern[last] = True
 
         column.set(pattern)
         time.sleep(0.01)
