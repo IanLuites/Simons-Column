@@ -1,0 +1,23 @@
+[tools]
+  # For now keep tools in repository root.
+  # Potential move these to the respective python/, rust/ directories.
+  python = "3"
+  rust = "1.82"
+
+[tasks]
+  [tasks."compile:emulator"]
+    description = "Compile the TPIC6C596 emulator"
+    hide = true
+
+    dir = "rust"
+    run = "cargo build --release -p emulator"
+
+    outputs = ["rust/target/release/emulator"]
+    sources = ["rust/bin/emulator"]
+
+  [tasks.emulator]
+    description = "TPIC6C596 emulator"
+
+    run = "rust/target/release/emulator"
+
+    depends = ["compile:emulator"]

@@ -17,3 +17,21 @@ Use the web UI to control the attached lights.
 ## Setup
 
 First setup the Raspberry PI following the instructions in [rpi/README.md](rpi/README.md#setup).
+
+## Development
+
+Tools and tasks in this repository are managed with [mise](https://mise.jdx.dev).
+
+With mise install run:
+
+- `mise install` - to install tools.
+- `mise ls --current` - to list all used tools.
+- `mise tasks` - to list all available tasks.
+
+### Tasks
+
+#### Emulator
+
+Use `mise run emulator` to run an emulator for TPIC6C596 shift registers.
+
+> Pass `--help` to list options.
