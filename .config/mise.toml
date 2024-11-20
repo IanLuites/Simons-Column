@@ -4,6 +4,8 @@
 [tools]
   # For now keep tools in repository root.
   # Potential move these to the respective python/, rust/ directories.
+  node = "23.2"
+  pnpm = "latest"
   python = "3"
   rust = "1.82"
 
