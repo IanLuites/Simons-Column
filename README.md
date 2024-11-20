@@ -11,8 +11,16 @@ Use the web UI to control the attached lights.
 
 ## Components
 
+Hardware:
+
 - [TPIC6C596](https://www.ti.com/lit/ds/symlink/tpic6c596.pdf)
 - [Raspberry PI 3 B+](rpi/)
+
+Software:
+
+- [emulator](rust/bin/emulator/) - Rust emulator to emulate TPIC6C596 shift registers.
+- [lights](python/lights/) - Python library to control lights.
+- [server](rust/bin/server/) - Rust server to manage and store light choreography.
 
 ## Setup
 
