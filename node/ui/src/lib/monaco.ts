@@ -6,11 +6,17 @@ export default monaco;
 
 import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
 
+const WORKERS: Record<string, Worker> = {};
+
 self.MonacoEnvironment = {
-	getWorker: function (_: string, label: string) {
-		switch (label) {
-			default:
-				return new editorWorker();
+	getWorker: function (id: string, label: string) {
+		if (!WORKERS[id]) {
+			switch (label) {
+				default:
+					WORKERS[id] = new editorWorker();
+			}
 		}
+
+		return WORKERS[id];
 	}
 };
