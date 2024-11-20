@@ -2,9 +2,10 @@
 	import { onDestroy, onMount } from 'svelte';
 	import type * as Monaco from 'monaco-editor/esm/vs/editor/editor.api';
 
-	let editor: Monaco.editor.IStandaloneCodeEditor;
 	let monaco: typeof Monaco;
-	let editorContainer: HTMLElement;
+	let editor: Monaco.editor.IStandaloneCodeEditor;
+	let model: Monaco.editor.ITextModel;
+	let container: HTMLElement;
 
 	export let code: string;
 	export let onDidChangeContent: (
@@ -12,17 +13,19 @@
 	) => void = () => {};
 
 	onMount(async () => {
-		monaco = (await import('./monaco')).default;
+		if (!monaco) {
+			monaco = (await import('./monaco')).default;
+		}
 
-		const editor = monaco.editor.create(editorContainer, {
+		editor = monaco.editor.create(container, {
 			minimap: { enabled: false },
-			autoIndent: 'none',
+			autoIndent: 'full',
 			automaticLayout: true,
 			theme: 'vs-dark',
 			language: 'python'
 		});
 
-		const model = monaco.editor.createModel(code, 'python');
+		model = monaco.editor.createModel(code, 'python');
 		editor.setModel(model);
 		model.setValue(code);
 
@@ -32,13 +35,22 @@
 		});
 	});
 
+	$: {
+		let _ = code;
+		model && model.getValue() != code && model.setValue(code);
+	}
+
 	onDestroy(() => {
-		monaco?.editor.getModels().forEach((model) => model.dispose());
+		model?.dispose();
 		editor?.dispose();
 	});
+
+	export function dispose() {
+		editor?.dispose();
+	}
 </script>
 
-<div bind:this={editorContainer}></div>
+<div bind:this={container}></div>
 
 <style>
 	div {
