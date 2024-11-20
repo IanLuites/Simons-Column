@@ -1,11 +1,11 @@
 <script lang="ts">
-	import Editor from '$lib/Editor.svelte';
+	import Monaco from '$lib/Monaco.svelte';
 
 	let code: string = 'print("Hello world!")';
 </script>
 
 <div>
-	<Editor bind:code />
+	<Monaco bind:code />
 </div>
 
 <style>

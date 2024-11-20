@@ -1,5 +1,4 @@
 <script lang="ts">
-	import loader from '@monaco-editor/loader';
 	import { onDestroy, onMount } from 'svelte';
 	import type * as Monaco from 'monaco-editor/esm/vs/editor/editor.api';
 
@@ -8,11 +7,12 @@
 	let editorContainer: HTMLElement;
 
 	export let code: string;
+	export let onDidChangeContent: (
+		event: Monaco.editor.IModelContentChangedEvent
+	) => void = () => {};
 
 	onMount(async () => {
-		const monacoEditor = await import('monaco-editor');
-		loader.config({ monaco: monacoEditor.default });
-		monaco = await loader.init();
+		monaco = (await import('./monaco')).default;
 
 		const editor = monaco.editor.create(editorContainer, {
 			minimap: { enabled: false },
@@ -24,9 +24,11 @@
 
 		const model = monaco.editor.createModel(code, 'python');
 		editor.setModel(model);
+		model.setValue(code);
 
-		model.onDidChangeContent(() => {
+		model.onDidChangeContent((event) => {
 			code = model.getValue();
+			onDidChangeContent && onDidChangeContent(event);
 		});
 	});
 
