@@ -18,3 +18,7 @@ Starting TPIC6C596 shift register emulator
   Chain:   3
   State:   00000000 00000000 00000000
 ```
+
+### Server
+
+Server to manage and run light choreography.
