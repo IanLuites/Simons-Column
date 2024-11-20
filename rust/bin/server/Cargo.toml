@@ -14,7 +14,6 @@
   workspace = true
 
 [dependencies]
-
   clap = { workspace = true }
 
   # Simple storage
@@ -26,6 +25,7 @@
   rust-embed = { version = "8.5.0", features = [] }
   serde = { version = "1.0", features = ["derive"] }
   tokio = { version = "1.41.1", features = ["rt-multi-thread"] }
+  tower-http = { version = "0.6.2", features = ["cors"] }
 
   # Instrumentation
   tracing = { workspace = true }

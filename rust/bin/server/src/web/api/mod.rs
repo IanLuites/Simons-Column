@@ -15,6 +15,7 @@ pub fn router(_config: &Config) -> Router<WebState> {
     Router::new()
         .route("/status", axum::routing::get(status::status))
         .nest("/v1", v1())
+        .layer(tower_http::cors::CorsLayer::new().allow_origin(tower_http::cors::Any))
 }
 
 /// V1 routes
