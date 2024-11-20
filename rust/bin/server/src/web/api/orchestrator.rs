@@ -19,10 +19,9 @@ async fn status(State(state): State<WebState>) -> Json<Status> {
 
 /// Start playing a choreography
 async fn start(State(state): State<WebState>, Json(start): Json<StartRequest>) -> Json<Status> {
-    state
-        .orchestrator()
-        .start(todo!("Find {}", start.choreography))
-        .into()
+    let choreography = state.choreography().read(&start.choreography);
+
+    state.orchestrator().start(&choreography.unwrap()).into()
 }
 
 /// Stop a playing choreography

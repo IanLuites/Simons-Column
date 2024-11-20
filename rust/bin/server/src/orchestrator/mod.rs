@@ -115,11 +115,12 @@ impl Orchestrator {
 
         info!(
             "Start playing: {:#} ({:#?})",
-            choreography.name, choreography.format
+            choreography.name(),
+            choreography.format()
         );
 
         // Hardcode python for now
-        std::fs::write("run.py", &choreography.data).expect("write choreography script");
+        std::fs::write("run.py", choreography.compile()).expect("write choreography script");
         let child = Command::new("python3")
             .current_dir(".")
             .args(["run.py"])
@@ -129,7 +130,7 @@ impl Orchestrator {
             .expect("child");
 
         self.current = Some(child);
-        self.info = Info::new(&choreography.name);
+        self.info = Info::new(choreography.name());
     }
 
     /// Stop the currently playing choreography.

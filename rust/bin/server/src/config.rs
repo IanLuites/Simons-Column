@@ -7,6 +7,20 @@ use clap::Parser;
 /// Server config
 #[derive(Debug, Parser)]
 pub struct Config {
+    // Choreography
+    /// Choreography timeout in seconds.
+    #[arg(short, long)]
+    #[cfg_attr(debug_assertions, arg(default_value = "./choreography"))]
+    #[cfg_attr(
+        all(not(debug_assertions), unix),
+        arg(default_value = "/var/choreography")
+    )]
+    #[cfg_attr(
+        all(not(debug_assertions), not(unix)),
+        arg(default_value = "./choreography")
+    )]
+    storage: std::path::PathBuf,
+
     // Orchestrator
     /// Choreography timeout in seconds.
     #[arg(short, long, default_value_t = 60.0)]
@@ -35,6 +49,12 @@ impl Config {
     #[must_use]
     pub fn addr(&self) -> String {
         format!("{}:{}", self.address, self.port)
+    }
+
+    /// Choreography storage directory.
+    #[must_use]
+    pub fn storage(&self) -> &std::path::Path {
+        &self.storage
     }
 
     /// Choreography timeout.

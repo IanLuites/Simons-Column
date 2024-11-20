@@ -1,7 +1,7 @@
 //! Choreography API managing choreography
 
 use axum::{
-    extract::Path,
+    extract::{Path, State},
     routing::{get, post, put},
     Json, Router,
 };
@@ -16,38 +16,60 @@ pub fn v1() -> Router<WebState> {
     Router::new()
         .route("/", get(list))
         .route("/", post(create))
-        .route("/:name", get(choreography))
+        .route("/:name", get(read))
         .route("/:name", put(update))
 }
 
 /// Choreography list
-async fn list() -> Json<List> {
+async fn list(State(state): State<WebState>) -> Json<List> {
     Json(List {
-        choreography: vec![],
+        choreography: state
+            .choreography()
+            .list()
+            .into_iter()
+            .map(|c| Info {
+                name: c.name().into(),
+                format: c.format(),
+            })
+            .collect(),
     })
 }
 
 /// Create choreography
-async fn create(Json(choreography): Json<Choreography>) -> Json<Choreography> {
+async fn create(
+    State(state): State<WebState>,
+    Json(choreography): Json<Choreography>,
+) -> Json<Choreography> {
+    state.choreography().write(&choreography);
     Json(choreography)
 }
 
 /// Fetch choreography
-async fn choreography(Path(name): Path<String>) -> Json<Choreography> {
-    Json(Choreography {
-        name,
-        format: Format::Python,
-        data: String::new(),
-    })
+async fn read(
+    State(state): State<WebState>,
+    Path(name): Path<String>,
+) -> Json<Option<Choreography>> {
+    Json(state.choreography().read(name))
 }
 
 /// Update choreography
-async fn update(Path(name): Path<String>, Json(_update): Json<Update>) -> Json<Choreography> {
-    Json(Choreography {
-        name,
-        format: Format::Python,
-        data: String::new(),
-    })
+async fn update(
+    State(state): State<WebState>,
+    Path(name): Path<String>,
+    Json(update): Json<Update>,
+) -> Json<Choreography> {
+    let mut choreography = state.choreography().read(name).unwrap();
+
+    if let Some(rename) = update.name {
+        choreography = state.choreography().rename(choreography, rename);
+    }
+
+    if let Some(data) = update.data {
+        let format = update.format.unwrap_or_else(|| choreography.format());
+        choreography = state.choreography().update(choreography, format, data);
+    }
+
+    Json(choreography)
 }
 
 /// Choreography list
