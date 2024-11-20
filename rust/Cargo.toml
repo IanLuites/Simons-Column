@@ -9,6 +9,10 @@
     # CLI
     clap = { version = "4.5.21", features = ["derive"] }
 
+    # Logging and Metrics
+    tracing = { version = "0.1.40" }
+    tracing-subscriber = { version = "0.3.1", features = ["env-filter"] }
+
   [workspace.package]
     authors = ["Ian Luites <ian@luites.com>"]
     documentation = "https://github.com/IanLuites/Simons-Column"
