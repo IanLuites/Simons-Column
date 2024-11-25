@@ -3,7 +3,7 @@
 use std::num::NonZeroUsize;
 
 /// Arguments to pass the benchmark.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Arguments(Vec<String>);
 
 impl Arguments {
@@ -21,7 +21,7 @@ impl Arguments {
     /// Create arguments from a generic iterator.
 
     #[must_use]
-    fn from_iter<T: std::fmt::Debug + std::string::ToString>(
+    pub(crate) fn from_iter<T: std::fmt::Debug + std::string::ToString>(
         iter: impl Iterator<Item = T>,
     ) -> Self {
         let mut arguments = Vec::new();
@@ -73,7 +73,7 @@ pub struct Iterations {
 }
 
 /// Benchmark to run.
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Benchmark {
     /// Benchmark id
     id: String,

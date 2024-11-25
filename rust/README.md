@@ -6,6 +6,10 @@
 
 Benchmarker to run benchmarks and collect results.
 
+Possible improvements:
+
+1. Instead of list (of list) of arguments change to a test matrix.
+
 ### Emulator
 
 Emulator for TPIC6C596 shift registers.
