@@ -137,10 +137,9 @@ impl Orchestrator {
     pub fn stop(&mut self) {
         self.process();
 
-        let mut running = None;
-        std::mem::swap(&mut self.current, &mut running);
-        if let Some(mut child) = running {
+        if let Some(child) = self.current.as_mut() {
             let _ = child.kill();
+            self.process();
         }
     }
 
@@ -149,23 +148,23 @@ impl Orchestrator {
     /// Cleans up if child exited.
     fn process(&mut self) {
         if let Some(child) = self.current.as_mut() {
-            if let Some(stdout) = child.stdout.as_mut() {
-                stdout
-                    .read_to_string(&mut self.info.stdout)
-                    .expect("read stdout");
-            }
-            if let Some(stderr) = child.stderr.as_mut() {
-                stderr
-                    .read_to_string(&mut self.info.stderr)
-                    .expect("read stderr");
-            }
-
             if let Some(status) = child.try_wait().expect("process status") {
                 debug!(
                     "Ended playing: {:#} ({:?})",
                     self.info.choreography,
                     status.code().unwrap_or(0)
                 );
+
+                if let Some(stdout) = child.stdout.as_mut() {
+                    stdout
+                        .read_to_string(&mut self.info.stdout)
+                        .expect("read stdout");
+                }
+                if let Some(stderr) = child.stderr.as_mut() {
+                    stderr
+                        .read_to_string(&mut self.info.stderr)
+                        .expect("read stderr");
+                }
 
                 self.current = None;
                 self.info.status = Some(status);
