@@ -74,6 +74,21 @@ try:
             GPIO.setup(self.clock_pin, GPIO.OUT)
             GPIO.setup(self.control_pin, GPIO.OUT)
 
+        def set_clock(self, on: Literal[0] | Literal[1]):
+            GPIO.output(self.data_pin, on)
+
+        def set_data(self, on: Literal[0] | Literal[1]):
+            GPIO.output(self.data_pin, on)
+
+        def set_control(self, on: Literal[0] | Literal[1]):
+            GPIO.output(self.control_pin, on)
+
+        def set_latch(self, on: Literal[0] | Literal[1]):
+            GPIO.output(self.latch_pin, on)
+
+        def get_control(self) -> Literal[0] | Literal[1]:
+            return GPIO.input(self.control_pin)
+
 except ImportError:
     import warnings
 
@@ -159,7 +174,6 @@ class TPIC6C596:
             data >>= 1
 
         self.pins.set_latch(1)
-        time.sleep(0.0001)
         self.pins.set_latch(0)
 
     def write(self, data: int):
