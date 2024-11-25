@@ -6,7 +6,7 @@ use serde::Deserialize;
 
 use crate::benchmark::Arguments;
 
-use super::Benchmark;
+use super::{Benchmark, Implementation};
 
 /// Arguments
 #[derive(Debug, Deserialize)]
@@ -76,9 +76,18 @@ struct BenchmarkConfig {
     #[serde(default)]
     args: Vec<Args>,
 }
+/// Implementation options.
+#[derive(Debug, Deserialize)]
+struct ImplementationConfig {
+    /// Label
+    label: Option<String>,
+
+    /// Implementation directory, defaults to id.
+    directory: Option<std::path::PathBuf>,
+}
 
 /// Config defaults.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Default, Deserialize)]
 struct Defaults {
     /// Warmup iterations
     warmup: Option<usize>,
@@ -90,11 +99,23 @@ struct Defaults {
 /// TOML config format.
 #[derive(Debug, Deserialize)]
 struct Config {
+    /// Strict mode
+    #[serde(default)]
+    strict: bool,
+
+    /// Implementation directory.
+    #[serde(default)]
+    implementation_directory: Option<std::path::PathBuf>,
+
     /// Config defaults.
+    #[serde(default)]
     defaults: Defaults,
 
     /// Benchmark definitions
     benchmarks: HashMap<String, BenchmarkConfig>,
+
+    /// Implementation definitions
+    implementations: HashMap<String, ImplementationConfig>,
 }
 
 /// Read TOML config from str.
@@ -103,6 +124,8 @@ pub fn from_str(toml: impl AsRef<str>) -> super::Config {
     let config: Config = toml::from_str(toml.as_ref()).expect("a");
 
     super::Config {
+        strict: config.strict,
+        implementation_directory: config.implementation_directory,
         warmup_iterations: config.defaults.warmup,
         benchmark_iterations: config.defaults.iterations,
         benchmarks: config
@@ -114,6 +137,15 @@ pub fn from_str(toml: impl AsRef<str>) -> super::Config {
                 arguments: v.args.into_iter().map(std::convert::Into::into).collect(),
                 warmup_iterations: v.warmup,
                 benchmark_iterations: v.iterations,
+            })
+            .collect(),
+        implementations: config
+            .implementations
+            .into_iter()
+            .map(|(k, v)| Implementation {
+                id: k,
+                label: v.label,
+                directory: v.directory,
             })
             .collect(),
     }

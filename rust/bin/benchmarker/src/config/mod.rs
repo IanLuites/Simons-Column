@@ -27,9 +27,28 @@ struct Benchmark {
     arguments: Vec<Arguments>,
 }
 
+/// Implementation config options.
+#[derive(Debug, PartialEq, Eq)]
+struct Implementation {
+    /// Implementation id
+    id: String,
+
+    /// Label
+    label: Option<String>,
+
+    /// Arguments
+    directory: Option<std::path::PathBuf>,
+}
+
 /// Combined application config.
 #[derive(Debug, PartialEq, Eq)]
 pub struct Config {
+    /// Strict mode, panicking on invalid config.
+    strict: bool,
+
+    /// Implementation directory.
+    implementation_directory: Option<std::path::PathBuf>,
+
     /// Warmup iterations.
     warmup_iterations: Option<usize>,
 
@@ -38,6 +57,23 @@ pub struct Config {
 
     /// Benchmarks
     benchmarks: Vec<Benchmark>,
+
+    /// Implementations
+    implementations: Vec<Implementation>,
+}
+
+/// Config error.
+///
+/// Exits if config is marked as strict.
+macro_rules! error {
+    ($strict:expr, $fmt:expr $(, $($arg:tt)*)?) => {
+        if $strict {
+            eprintln!(concat!("Error: ", $fmt), $($($arg)*)?);
+            std::process::exit(1)
+        } else {
+            eprintln!(concat!("Warning: ", $fmt), $($($arg)*)?);
+        }
+    };
 }
 
 impl Config {
@@ -48,9 +84,12 @@ impl Config {
     pub fn parse() -> Self {
         let cli = cli::parse();
         let mut config = Self {
+            strict: cli.strict,
+            implementation_directory: cli.implementation_directory,
             warmup_iterations: cli.warmup_iterations,
             benchmark_iterations: cli.benchmark_iterations,
             benchmarks: vec![],
+            implementations: vec![],
         };
 
         if cli.config_file.is_empty() {
@@ -68,9 +107,11 @@ impl Config {
 
     /// Merge another config into self.
     fn merge(&mut self, mut other: Self) {
+        self.strict |= other.strict;
         self.warmup_iterations = self.warmup_iterations.or(other.warmup_iterations);
         self.benchmark_iterations = self.benchmark_iterations.or(other.benchmark_iterations);
         self.benchmarks.append(&mut other.benchmarks);
+        self.implementations.append(&mut other.implementations);
     }
 
     /// Load toml config.
@@ -85,23 +126,23 @@ impl Config {
 
     /// All configured benchmarks.
     #[must_use]
-    pub fn benchmarks(&self) -> Vec<crate::benchmark::Benchmark> {
+    pub fn benchmarks(&self) -> Vec<crate::Benchmark> {
         let mut benchmarks = Vec::with_capacity(self.benchmarks.len());
 
         for benchmark in &self.benchmarks {
             if benchmarks
                 .iter()
-                .any(|b: &crate::benchmark::Benchmark| b.id() == benchmark.id)
+                .any(|b: &crate::Benchmark| b.id() == benchmark.id)
             {
-                eprintln!(
-                    "Warning: duplicate; skipping benchmark with id {:?} ",
-                    benchmark.id
+                error!(
+                    self.strict,
+                    "duplicate; skipping benchmark with id {:?}", benchmark.id
                 );
 
                 continue;
             }
 
-            let mut builder = crate::benchmark::Benchmark::build(&benchmark.id);
+            let mut builder = crate::Benchmark::build(&benchmark.id);
 
             for arguments in &benchmark.arguments {
                 builder = builder.with_variant(arguments.clone());
@@ -124,11 +165,68 @@ impl Config {
 
         benchmarks
     }
+
+    /// All configured implementations.
+    #[must_use]
+    pub fn implementations(&self) -> Vec<crate::Implementation> {
+        let implementation_directory = self
+            .implementation_directory
+            .clone()
+            .unwrap_or_else(|| std::env::current_dir().expect("working directory"));
+
+        let mut implementations = Vec::with_capacity(self.implementations.len());
+
+        for implementation in &self.implementations {
+            if implementations
+                .iter()
+                .any(|b: &crate::Implementation| b.id() == implementation.id)
+            {
+                error!(
+                    self.strict,
+                    "duplicate; skipping implementation with id {:?}", implementation.id
+                );
+
+                continue;
+            }
+
+            let directory = implementation.directory.as_ref().map_or_else(
+                || implementation_directory.join(&implementation.id),
+                |custom| {
+                    if custom.is_absolute() {
+                        custom.clone()
+                    } else {
+                        implementation_directory.join(custom)
+                    }
+                },
+            );
+
+            if !directory.exists() {
+                error!(
+                    self.strict,
+                    "implementation directory does not exist {:?}", directory
+                );
+
+                continue;
+            }
+
+            let mut builder = crate::Implementation::build(&implementation.id);
+            if let Some(label) = &implementation.label {
+                builder = builder.with_label(label);
+            }
+            if let Some(directory) = &implementation.directory {
+                builder = builder.with_directory(directory);
+            }
+
+            implementations.push(builder.build());
+        }
+
+        implementations
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::benchmark::Benchmark;
+    use crate::Benchmark;
 
     use super::*;
 
