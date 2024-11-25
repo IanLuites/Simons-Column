@@ -1,0 +1,17 @@
+[package]
+  description = "Run benchmarks and collect results."
+  name = "benchmarker"
+  version = "0.1.0"
+
+  authors.workspace = true
+  documentation.workspace = true
+  edition.workspace = true
+  homepage.workspace = true
+  license.workspace = true
+  readme.workspace = true
+  repository.workspace = true
+
+[lints]
+  workspace = true
+
+[dependencies]

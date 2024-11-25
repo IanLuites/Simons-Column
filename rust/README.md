@@ -2,6 +2,10 @@
 
 ## Executables
 
+### Benchmarker
+
+Benchmarker to run benchmarks and collect results.
+
 ### Emulator
 
 Emulator for TPIC6C596 shift registers.
