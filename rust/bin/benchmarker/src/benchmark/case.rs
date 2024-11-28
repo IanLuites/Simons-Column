@@ -22,13 +22,26 @@ impl Case<'_> {
         )
     }
 
-    /// Case label.
+    /// Benchmark suite Id.
+    #[must_use]
+    pub fn suite_id(&self) -> &str {
+        self.namespace
+            .map_or_else(|| self.case.id.as_str(), |namespace| namespace.id.as_str())
+    }
+
+    /// Case full label including suite.
     #[must_use]
     pub fn label(&self) -> String {
         self.namespace.map_or_else(
             || self.case.label.clone(),
             |namespace| format!("{}: {}", namespace.label, self.case.label),
         )
+    }
+
+    /// Case short label without suite.
+    #[must_use]
+    pub fn short_label(&self) -> &str {
+        &self.case.label
     }
 
     /// Benchmark arguments.
@@ -48,6 +61,12 @@ impl Case<'_> {
         self.namespace.map_or(self.case.iterations, |namespace| {
             self.case.iterations | namespace.iterations
         })
+    }
+
+    /// Check whether case is part of a matrix suite or a single case.
+    #[must_use]
+    pub const fn is_matrix(&self) -> bool {
+        self.namespace.is_some()
     }
 }
 

@@ -2,8 +2,6 @@
 
 use std::path::PathBuf;
 
-use crate::benchmark::Suite;
-
 /// Implementation of benchmarks.
 #[derive(Debug, PartialEq, Eq)]
 pub struct Implementation {
@@ -52,28 +50,10 @@ impl Implementation {
         &self.label
     }
 
-    /// Checks whether an implementation implements the given benchmark.
+    /// Implementation directory
     #[must_use]
-    pub fn implements(&self, benchmark: &Suite) -> bool {
-        self.implementation_file(benchmark).is_some()
-    }
-
-    /// Find the implementation file for the benchmark.
-    #[must_use]
-    pub fn implementation_file(&self, benchmark: &Suite) -> Option<PathBuf> {
-        let mut file = self.directory.join(benchmark.id());
-
-        if file.exists() {
-            return Some(file);
-        }
-
-        file.set_extension("py");
-
-        if file.exists() {
-            Some(file)
-        } else {
-            None
-        }
+    pub fn directory(&self) -> &std::path::Path {
+        &self.directory
     }
 }
 

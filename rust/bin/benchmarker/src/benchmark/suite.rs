@@ -51,7 +51,7 @@ impl Suite {
         }
     }
 
-    /// Benchmark label.
+    /// Benchmark suite full label.
     #[must_use]
     pub fn label(&self) -> String {
         match self {
@@ -68,6 +68,15 @@ impl Suite {
                     .collect::<Vec<&str>>()
                     .join(", ")
             ),
+        }
+    }
+
+    /// Benchmark suite label
+    #[must_use]
+    pub fn short_label(&self) -> &str {
+        match self {
+            Self::Single(definition) => &definition.label,
+            Self::Matrix { namespace, .. } => &namespace.label,
         }
     }
 }
