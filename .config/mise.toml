@@ -17,6 +17,17 @@
     run = 'rustup target add aarch64-unknown-linux-gnu'
 
 
+  [tasks."compile:benchmarker:rpi"]
+    description = "Compile the benchmarker for RPi 3, 4, and 5"
+
+    dir = "../rust"
+    run = 'cargo build -p benchmarker --target aarch64-unknown-linux-gnu {{option(name="mode",default="--release")}}'
+
+    depends = ["target:rpi"]
+    outputs = ["rust/target/aarch64-unknown-linux-gnu/release/benchmarker"]
+    sources = ["rust/bin/benchmarker"]
+
+
   [tasks."compile:server:rpi"]
     description = "Compile the light server for RPi 3, 4, and 5"
 
