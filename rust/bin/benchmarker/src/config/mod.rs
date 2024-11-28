@@ -1,31 +1,9 @@
 //! Benchmark config
 
-use std::num::NonZeroUsize;
-
-use crate::benchmark::Arguments;
+use crate::benchmark::{self, Iterations, Suite};
 
 mod cli;
 mod toml;
-
-/// Benchmark config options.
-#[derive(Debug, PartialEq, Eq)]
-struct Benchmark {
-    /// Benchmark id
-    id: String,
-
-    /// Label
-    label: Option<String>,
-
-    /// Warmup iterations.
-    warmup_iterations: Option<usize>,
-
-    /// Benchmark iterations.
-    #[allow(clippy::struct_field_names)]
-    benchmark_iterations: Option<NonZeroUsize>,
-
-    /// Arguments
-    arguments: Vec<Arguments>,
-}
 
 /// Implementation config options.
 #[derive(Debug, PartialEq, Eq)]
@@ -41,22 +19,29 @@ struct Implementation {
 }
 
 /// Combined application config.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug)]
 pub struct Config {
+    /// Benchmarks
+    benchmarks: Vec<Suite>,
+
+    /// Implementations
+    implementations: Vec<crate::Implementation>,
+}
+
+/// Combined application config.
+#[derive(Debug)]
+struct Builder {
     /// Strict mode, panicking on invalid config.
     strict: bool,
 
     /// Implementation directory.
     implementation_directory: Option<std::path::PathBuf>,
 
-    /// Warmup iterations.
-    warmup_iterations: Option<usize>,
-
-    /// Benchmark iterations.
-    benchmark_iterations: Option<NonZeroUsize>,
+    /// Iterations.
+    iterations: Iterations,
 
     /// Benchmarks
-    benchmarks: Vec<Benchmark>,
+    benchmarks: Vec<benchmark::Builder>,
 
     /// Implementations
     implementations: Vec<Implementation>,
@@ -76,9 +61,7 @@ macro_rules! error {
     };
 }
 
-impl Config {
-    // Reading
-
+impl Builder {
     /// Parse config and load from all sources.
     #[must_use]
     pub fn parse() -> Self {
@@ -86,8 +69,7 @@ impl Config {
         let mut config = Self {
             strict: cli.strict,
             implementation_directory: cli.implementation_directory,
-            warmup_iterations: cli.warmup_iterations,
-            benchmark_iterations: cli.benchmark_iterations,
+            iterations: Iterations::default(),
             benchmarks: vec![],
             implementations: vec![],
         };
@@ -105,15 +87,6 @@ impl Config {
         config
     }
 
-    /// Merge another config into self.
-    fn merge(&mut self, mut other: Self) {
-        self.strict |= other.strict;
-        self.warmup_iterations = self.warmup_iterations.or(other.warmup_iterations);
-        self.benchmark_iterations = self.benchmark_iterations.or(other.benchmark_iterations);
-        self.benchmarks.append(&mut other.benchmarks);
-        self.implementations.append(&mut other.implementations);
-    }
-
     /// Load toml config.
     fn from_toml(toml: impl AsRef<str>) -> Self {
         toml::from_str(toml)
@@ -123,52 +96,42 @@ impl Config {
     fn from_toml_file(file: impl AsRef<std::path::Path>) -> Self {
         Self::from_toml(std::fs::read_to_string(file.as_ref()).expect("config"))
     }
+    /// Merge another config into self.
+    fn merge(&mut self, mut other: Self) {
+        self.strict |= other.strict;
+        self.iterations |= self.iterations;
+        self.benchmarks.append(&mut other.benchmarks);
+        self.implementations.append(&mut other.implementations);
+    }
 
-    /// All configured benchmarks.
+    /// Generate a fully parsed config.
     #[must_use]
-    pub fn benchmarks(&self) -> Vec<crate::Benchmark> {
+    pub fn build(self) -> Config {
         let mut benchmarks = Vec::with_capacity(self.benchmarks.len());
 
-        for benchmark in &self.benchmarks {
-            if benchmarks
-                .iter()
-                .any(|b: &crate::Benchmark| b.id() == benchmark.id)
-            {
+        for mut builder in self.benchmarks {
+            if self.iterations.has_warmup() {
+                builder = builder.warmup(self.iterations.warmup());
+            }
+            if self.iterations.has_benchmark() {
+                builder = builder.iterations(self.iterations.benchmark().get());
+            }
+
+            let benchmark = builder.build();
+
+            if benchmarks.iter().any(|s: &Suite| s.id() == benchmark.id()) {
                 error!(
                     self.strict,
-                    "duplicate; skipping benchmark with id {:?}", benchmark.id
+                    "duplicate; skipping benchmark with id {:?}",
+                    benchmark.id()
                 );
 
                 continue;
             }
 
-            let mut builder = crate::Benchmark::build(&benchmark.id);
-
-            for arguments in &benchmark.arguments {
-                builder = builder.with_variant(arguments.clone());
-            }
-
-            if let Some(label) = &benchmark.label {
-                builder = builder.with_label(label);
-            }
-
-            if let Some(warmup) = benchmark.warmup_iterations.or(self.warmup_iterations) {
-                builder = builder.with_warmup(warmup);
-            }
-
-            if let Some(iterations) = benchmark.benchmark_iterations.or(self.benchmark_iterations) {
-                builder = builder.with_iterations(iterations);
-            }
-
-            benchmarks.push(builder.build());
+            benchmarks.push(benchmark);
         }
 
-        benchmarks
-    }
-
-    /// All configured implementations.
-    #[must_use]
-    pub fn implementations(&self) -> Vec<crate::Implementation> {
         let implementation_directory = self
             .implementation_directory
             .clone()
@@ -176,7 +139,7 @@ impl Config {
 
         let mut implementations = Vec::with_capacity(self.implementations.len());
 
-        for implementation in &self.implementations {
+        for implementation in self.implementations {
             if implementations
                 .iter()
                 .any(|b: &crate::Implementation| b.id() == implementation.id)
@@ -211,22 +174,51 @@ impl Config {
 
             let mut builder = crate::Implementation::build(&implementation.id);
             if let Some(label) = &implementation.label {
-                builder = builder.with_label(label);
+                builder = builder.label(label);
             }
             if let Some(directory) = &implementation.directory {
-                builder = builder.with_directory(directory);
+                builder = builder.directory(directory);
             }
 
             implementations.push(builder.build());
         }
 
-        implementations
+        Config {
+            benchmarks,
+            implementations,
+        }
+    }
+}
+
+impl Config {
+    #[cfg(test)]
+    /// Load toml config.
+    fn from_toml(toml: impl AsRef<str>) -> Self {
+        Builder::from_toml(toml).build()
+    }
+
+    /// Parse config and load from all sources.
+    #[must_use]
+    pub fn parse() -> Self {
+        Builder::parse().build()
+    }
+
+    /// Configured benchmark suites.
+    #[must_use]
+    pub fn benchmarks(&self) -> &[Suite] {
+        &self.benchmarks
+    }
+
+    /// Configured benchmark implementations.
+    #[must_use]
+    pub fn implementations(&self) -> &[crate::Implementation] {
+        &self.implementations
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::Benchmark;
+    use crate::benchmark::Suite;
 
     use super::*;
 
@@ -234,24 +226,29 @@ mod tests {
     fn from_toml() {
         const TOML: &str = r#"
 [benchmarks]
-shift_bit = { label = "Shift Single Bit" }
-single_pin = { label = "Single Pin", args = [17, 22, 27] }
-custom = { warmup = 0, iterations = 100 }
+  custom = { warmup = 0, iterations = 100 }
+  shift_bit = { label = "Shift Single Bit" }
+
+  [benchmarks.single_pin]
+    label = "Single Pin"
+
+    [benchmarks.single_pin.matrix]
+      gpio17 = { args = [17] }
+      gpio22 = { args = [22] }
+      gpio27 = { args = [27] }
 "#;
 
         let expected = [
-            Benchmark::build("shift_bit")
-                .with_label("Shift Single Bit")
+            Suite::build("shift_bit").label("Shift Single Bit").build(),
+            Suite::build("single_pin")
+                .label("Single Pin")
+                .case("gpio17", |case| case.arg("17"))
+                .case("gpio22", |case| case.arg("22"))
+                .case("gpio27", |case| case.arg("27"))
                 .build(),
-            Benchmark::build("single_pin")
-                .with_label("Single Pin")
-                .with_variant(["17"])
-                .with_variant(["22"])
-                .with_variant(["27"])
-                .build(),
-            Benchmark::build("custom")
-                .with_warmup(0_usize)
-                .with_iterations(100_usize)
+            Suite::build("custom")
+                .warmup(0_usize)
+                .iterations(100_usize)
                 .build(),
         ];
 
@@ -261,10 +258,17 @@ custom = { warmup = 0, iterations = 100 }
         assert_eq!(benchmarks.len(), expected.len());
 
         for expect in &expected {
-            assert!(
-                benchmarks.contains(expect),
-                "Missing: {expect:#?} in {benchmarks:#?}"
-            );
+            let matching = benchmarks
+                .iter()
+                .find(|b| b.id() == expect.id())
+                .expect("matching suite");
+
+            for case in expect {
+                assert!(
+                    matching.cases().contains(&case),
+                    "Missing: {case:#?} in {matching:#?}"
+                );
+            }
         }
     }
 }

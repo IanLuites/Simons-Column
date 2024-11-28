@@ -3,8 +3,8 @@
 mod benchmark;
 mod config;
 mod implementation;
+mod util;
 
-use benchmark::Benchmark;
 use implementation::Implementation;
 
 fn main() {
@@ -16,7 +16,7 @@ fn main() {
         eprintln!("No benchmarks found.");
     } else {
         println!("Benchmarks:\n");
-        for benchmark in &benchmarks {
+        for benchmark in benchmarks {
             println!(" - {}", benchmark.label());
         }
     }
@@ -34,7 +34,7 @@ fn main() {
                 benchmarks
                     .iter()
                     .filter(|b| implementation.implements(b))
-                    .map(benchmark::Benchmark::label)
+                    .map(benchmark::Suite::id)
                     .collect::<Vec<&str>>()
                     .join(", ")
             );

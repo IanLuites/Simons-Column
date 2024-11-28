@@ -2,7 +2,7 @@
 
 use std::path::PathBuf;
 
-use crate::benchmark::Benchmark;
+use crate::benchmark::Suite;
 
 /// Implementation of benchmarks.
 #[derive(Debug, PartialEq, Eq)]
@@ -54,13 +54,13 @@ impl Implementation {
 
     /// Checks whether an implementation implements the given benchmark.
     #[must_use]
-    pub fn implements(&self, benchmark: &Benchmark) -> bool {
+    pub fn implements(&self, benchmark: &Suite) -> bool {
         self.implementation_file(benchmark).is_some()
     }
 
     /// Find the implementation file for the benchmark.
     #[must_use]
-    fn implementation_file(&self, benchmark: &Benchmark) -> Option<PathBuf> {
+    pub fn implementation_file(&self, benchmark: &Suite) -> Option<PathBuf> {
         let mut file = self.directory.join(benchmark.id());
 
         if file.exists() {
@@ -110,7 +110,7 @@ impl Builder {
 
     /// Set label for benchmark.
     #[must_use]
-    pub fn with_label(mut self, label: impl Into<String>) -> Self {
+    pub fn label(mut self, label: impl Into<String>) -> Self {
         self.label = Some(label.into());
 
         assert!(
@@ -123,7 +123,7 @@ impl Builder {
 
     /// Set implementation directory.
     #[must_use]
-    pub fn with_directory(mut self, directory: impl Into<PathBuf>) -> Self {
+    pub fn directory(mut self, directory: impl Into<PathBuf>) -> Self {
         self.directory = Some(directory.into());
         self
     }

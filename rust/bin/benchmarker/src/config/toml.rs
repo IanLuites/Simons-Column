@@ -4,9 +4,9 @@ use std::{collections::HashMap, num::NonZeroUsize};
 
 use serde::Deserialize;
 
-use crate::benchmark::Arguments;
+use crate::benchmark::{Arguments, Iterations};
 
-use super::{Benchmark, Implementation};
+use super::Implementation;
 
 /// Arguments
 #[derive(Debug, Deserialize)]
@@ -60,9 +60,9 @@ impl std::fmt::Display for Arg {
     }
 }
 
-/// Benchmark options.
+/// Basic benchmark config.
 #[derive(Debug, Deserialize)]
-struct BenchmarkConfig {
+struct Base {
     /// Label
     label: Option<String>,
 
@@ -74,8 +74,20 @@ struct BenchmarkConfig {
 
     /// Arguments
     #[serde(default)]
-    args: Vec<Args>,
+    args: Option<Args>,
 }
+
+/// Benchmark options.
+#[derive(Debug, Deserialize)]
+struct BenchmarkConfig {
+    /// Base config for a suite.
+    #[serde(flatten)]
+    base: Base,
+
+    /// Matrix
+    matrix: Option<std::collections::HashMap<String, Base>>,
+}
+
 /// Implementation options.
 #[derive(Debug, Deserialize)]
 struct ImplementationConfig {
@@ -112,33 +124,63 @@ struct Config {
     defaults: Defaults,
 
     /// Benchmark definitions
+    #[serde(default)]
     benchmarks: HashMap<String, BenchmarkConfig>,
 
     /// Implementation definitions
+    #[serde(default)]
     implementations: HashMap<String, ImplementationConfig>,
 }
 
 /// Read TOML config from str.
 #[must_use]
-pub fn from_str(toml: impl AsRef<str>) -> super::Config {
+pub fn from_str(toml: impl AsRef<str>) -> super::Builder {
     let config: Config = toml::from_str(toml.as_ref()).expect("a");
 
-    super::Config {
+    let mut benchmarks = Vec::with_capacity(config.benchmarks.len());
+
+    for (key, value) in config.benchmarks {
+        let mut builder = crate::benchmark::Suite::build(key);
+        if let Some(label) = value.base.label {
+            builder = builder.label(label);
+        }
+        if let Some(warmup) = value.base.warmup {
+            builder = builder.warmup(warmup);
+        }
+        if let Some(iterations) = value.base.iterations {
+            builder = builder.iterations(iterations.get());
+        }
+        if let Some(args) = value.base.args {
+            builder = builder.args(args);
+        }
+
+        for (id, config) in value.matrix.unwrap_or_default() {
+            builder = builder.case(id, |mut case| {
+                if let Some(label) = config.label {
+                    case = case.label(label);
+                }
+                if let Some(warmup) = config.warmup {
+                    case = case.warmup(warmup);
+                }
+                if let Some(iterations) = config.iterations {
+                    case = case.iterations(iterations.get());
+                }
+                if let Some(args) = config.args {
+                    case = case.args(args);
+                }
+
+                case
+            });
+        }
+
+        benchmarks.push(builder);
+    }
+
+    super::Builder {
         strict: config.strict,
         implementation_directory: config.implementation_directory,
-        warmup_iterations: config.defaults.warmup,
-        benchmark_iterations: config.defaults.iterations,
-        benchmarks: config
-            .benchmarks
-            .into_iter()
-            .map(|(k, v)| Benchmark {
-                id: k,
-                label: v.label,
-                arguments: v.args.into_iter().map(std::convert::Into::into).collect(),
-                warmup_iterations: v.warmup,
-                benchmark_iterations: v.iterations,
-            })
-            .collect(),
+        iterations: Iterations::new(config.defaults.warmup, config.defaults.iterations),
+        benchmarks,
         implementations: config
             .implementations
             .into_iter()
