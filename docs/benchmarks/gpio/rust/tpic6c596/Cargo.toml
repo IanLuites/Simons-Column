@@ -1,0 +1,33 @@
+[package]
+  name = "tpic6c596_benchmarks"
+  version = "0.0.1"
+
+  edition = "2021"
+
+[[bin]]
+  name = "shift_chain"
+  path = "src/benchmark/shift_chain.rs"
+
+[[bin]]
+  name = "shift_bit"
+  path = "src/benchmark/shift_bit.rs"
+
+[[bin]]
+  name = "shift_register"
+  path = "src/benchmark/shift_register.rs"
+
+[dependencies]
+  rppal = "0.19.0"
+  tpic6c596 = { path = "../../../../../rust/crates/tpic6c596", default-features = false }
+
+[profile.release]
+  codegen-units = 1
+  debug = false
+  incremental = false
+  lto = true
+  opt-level = 3
+
+  # Reduce size
+  # opt-level = "z"
+  panic = "abort"
+  strip = true
