@@ -1,0 +1,42 @@
+[defaults]
+  benchmark = 100_000
+  warmup = 100
+
+
+[benchmarks.shift_bit]
+  label = "Shift Single Bit"
+
+  [benchmarks.shift_bit.matrix]
+    0 = { args = [0] }
+    1 = { args = [1] }
+
+[benchmarks.single_pin]
+  label = "Single Pin"
+
+  [benchmarks.single_pin.matrix]
+    gpio17 = { args = [17], label = "GPIO 17" }
+    gpio22 = { args = [22], label = "GPIO 22" }
+    gpio27 = { args = [27], label = "GPIO 27" }
+
+[benchmarks.shift_register]
+  label = "Shift Single Register"
+
+  [benchmarks.shift_register.matrix]
+    0 = { args = [0], label = "00000000" }
+    202 = { args = [202], label = "11001010" }
+    255 = { args = [255], label = "11111111" }
+
+[benchmarks.shift_chain]
+  label = "Shift Chain of Registers"
+
+  [benchmarks.shift_chain.matrix]
+    0 = { args = [0], label = "00000000 00000000 00000000" }
+    16777215 = { args = [16777215], label = "11111111 11111111 11111111" }
+    43775 = { args = [43775], label = "00000000 10101010 11111111" }
+
+
+[implementations]
+  lights = { label = "Python using lights library", directory = "python/lights" }
+  rpio_gpio = { label = "Python using RPi.GPIO library", directory = "python/rpi_gpio" }
+  rppal = { label = "Rust using rppal crate", directory = "rust/rppal" }
+  tpic6c596 = { label = "Rust using tpic6c596 crate", directory = "rust/tpic6c596" }
