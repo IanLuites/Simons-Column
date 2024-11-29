@@ -6,6 +6,9 @@
   [workspace.dependencies]
     tpic6c596 = { path = "crates/tpic6c596" }
 
+    # General use
+    serde = { version = "1.0" }
+
     # CLI
     clap = { version = "4.5.21", features = ["derive"] }
 
