@@ -58,6 +58,61 @@
 
     depends = ["connected"]
 
+  [tasks."install:benchmarker:rpi"]
+    description = "Install benchmarker on a RPi 3, 4, and 5 or similar."
+
+    dir = '../rust/'
+    run = [
+      'mise run copy-to "target/aarch64-unknown-linux-gnu/release/benchmarker" "benchmarker"',
+      'mise run ssh -o BatchMode=yes sudo mv benchmarker /usr/local/bin/benchmarker',
+    ]
+
+    depends = ["compile:benchmarker:rpi"]
+
+  [tasks."benchmark:rpi"]
+    description = "Run benchmark on the RPi 3, 4, and 5."
+
+    dir = ".."
+
+    run = [
+      # Create temporary directory for benchmarks
+      'rm -Rf ./tmp',
+      'mkdir ./tmp',
+      'echo "{{arg(name="benchmark")}}" > ./tmp/benchmark',
+
+      # Copy: Config
+      'cp "./docs/benchmarks/$(cat ./tmp/benchmark)/config.toml" "./tmp/config.toml"',
+      #       Python
+      "rsync -av --quiet --include '*/' --include '*.py' --exclude '*' \"./docs/benchmarks/$(cat ./tmp/benchmark)/python/\" './tmp/python/'",
+      #       Rust
+      "find ./docs/benchmarks/$(cat ./tmp/benchmark)/rust -mindepth 1 -maxdepth 1 -type d -exec /usr/bin/env sh -c 'cd \"{}\" && cargo build --release --target aarch64-unknown-linux-gnu'  \\;",
+      """
+      find ./docs/benchmarks/$(cat ./tmp/benchmark)/rust/*/target/aarch64-unknown-linux-gnu/release/ -maxdepth 1 -type f -executable -exec /usr/bin/env sh -c '
+        for file; do
+          subdir=$(echo "$file" | sed -E "s|^\\./docs/benchmarks/$(cat ./tmp/benchmark)/rust/([^/]+)/.*$|\\1|")
+          mkdir -p "./tmp/rust/$subdir"
+          cp "$file" "./tmp/rust/$subdir/"
+        done
+      ' /usr/bin/env {} +
+      """,
+
+      # Upload and execute
+      'mise run ssh -o BatchMode=yes rm -Rf ./benchmark',
+      'mise run copy-to ./tmp benchmark',
+      'mise run ssh "cd benchmark && benchmarker"',
+
+      # Fetch results
+      'mise run copy-from benchmark/results.json ./tmp/results.json',
+
+      # Display
+      'jq < ./tmp/results.json',
+
+      # Cleanup
+      'rm -Rf ./tmp',
+    ]
+
+    depends = ["install:benchmarker:rpi"]
+
   [tasks."target:rpi"]
     description = "Compile target for RPi 3, 4, and 5"
     hide = true
