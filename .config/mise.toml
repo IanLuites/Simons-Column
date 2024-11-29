@@ -10,6 +10,54 @@
   rust = "1.82"
 
 [tasks]
+  [tasks."connected"]
+    description = "Checks whether connected to remote device."
+    hide = true
+
+    dir = "ssh"
+    run = '[ -f ./remote ] || (echo "Not connected. Use: mise run connect <remote>" && exit 1)'
+
+  [tasks."connect"]
+    description = "Setup connection to a remote device."
+
+    dir = "ssh"
+
+    run = [
+      'echo {{arg(name="host")}} > ./remote',
+      '[ -f id_rsa ] || ssh-keygen -q -t rsa -b 4096 -f id_rsa -N ""',
+      'ssh -q -o BatchMode=yes -o ConnectTimeout=5 -i id_rsa "$(cat ./remote)" exit || ssh-copy-id -i id_rsa.pub "$(cat ./remote)"',
+    ]
+
+    outputs = [
+      ".config/ssh/remote",
+      ".config/ssh/id_rsa",
+      ".config/ssh/id_rsa.pub",
+    ]
+
+  [tasks.copy-to]
+    description = "SCP copy to a device using the dev keys from the repo."
+
+    dir = "{{cwd}}"
+    run = 'scp -i "$(git rev-parse --show-toplevel)/.config/ssh/id_rsa" -r "{{arg(name="local")}}" "$(cat "$(git rev-parse --show-toplevel)/.config/ssh/remote"):{{arg(name="remote")}}"'
+
+    depends = ["connected"]
+
+  [tasks.copy-from]
+    description = "SCP copy from a device using the dev keys from the repo."
+
+    dir = "{{cwd}}"
+    run = 'scp -i "$(git rev-parse --show-toplevel)/.config/ssh/id_rsa" -r "$(cat "$(git rev-parse --show-toplevel)/.config/ssh/remote"):{{arg(name="remote")}}" "{{arg(name="local")}}"'
+
+    depends = ["connected"]
+
+  [tasks.ssh]
+    description = "SSH into a device using the dev keys from the repo."
+
+    dir = "ssh"
+    run = 'ssh -i id_rsa "$(cat ./remote)"'
+
+    depends = ["connected"]
+
   [tasks."target:rpi"]
     description = "Compile target for RPi 3, 4, and 5"
     hide = true

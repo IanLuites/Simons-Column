@@ -35,6 +35,7 @@ With mise install run:
 - `mise install` - to install tools.
 - `mise ls --current` - to list all used tools.
 - `mise tasks` - to list all available tasks.
+- `mise connect <user@device>` - to setup SSH connection to device.
 
 ### Tasks
 

@@ -1,0 +1,6 @@
+# Commit nothing
+*
+
+# Except the root ignore and README
+!/.gitignore
+!/README.md
