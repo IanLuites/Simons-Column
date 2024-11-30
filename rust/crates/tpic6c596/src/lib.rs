@@ -39,7 +39,7 @@ pub struct Controller<C: Connector> {
     /// TPIC6C596 register chain length.
     chain: usize,
 
-    ///
+    /// Bits to write to chain.
     bits: usize,
 
     // Local State
@@ -65,6 +65,12 @@ impl<C: Connector> Controller<C> {
             bits: chain * 8,
             chain,
         }
+    }
+
+    /// The length of the register chain.
+    #[must_use]
+    pub const fn register_chain(&self) -> usize {
+        self.chain
     }
 
     /// Turn shift registers on.
@@ -113,8 +119,9 @@ impl<C: Connector> Controller<C> {
     }
 }
 
+#[cfg(feature = "delay")]
 /// Latch delay to make the TPIC6C596 properly detect the latch.
-const LATCH_DELAY: Duration = Duration::from_nanos(1);
+const LATCH_DELAY: std::time::Duration = std::time::Duration::from_nanos(1);
 
 /// Write bits to the shift register.
 fn shift<C: Connector>(connector: &mut C, mut data: u64, len: usize) {
@@ -127,7 +134,8 @@ fn shift<C: Connector>(connector: &mut C, mut data: u64, len: usize) {
     }
 
     connector.set(Pin::Latch, true);
-    // sleep(LATCH_DELAY);
+    #[cfg(feature = "delay")]
+    std::thread::sleep(LATCH_DELAY);
     connector.set(Pin::Latch, false);
 }
 
