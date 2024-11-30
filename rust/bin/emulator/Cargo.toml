@@ -15,7 +15,7 @@
   workspace = true
 
 [dependencies]
-  tpic6c596 = { workspace = true }
+  tpic6c596 = { workspace = true, features = ["emulator"] }
 
   clap = { workspace = true }
   ctrlc = { version = "3.4.5" }

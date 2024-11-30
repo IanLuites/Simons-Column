@@ -12,6 +12,10 @@
 //! - `delay`: Adds a small delay after latching to ensure the TPIC6C596 properly detects
 //!   the latch. This feature is useful for certain hardware configurations that require
 //!   a delay to function correctly.
+//! - `connector-emulator`: Adds a build in connector for the emulator. Useable
+//!    using `Connector::emulator` or `Connector::emulator_on_socket`.
+//! - `connector-rpi`: Adds a build in connector for the Raspberry Pi GPIO.
+//!    Useable using `Connector::rpi_gpio`.
 //!
 //! # Example
 //!
@@ -50,6 +54,9 @@ mod emulator;
 #[cfg(feature = "emulator")]
 pub use emulator::{Emulator, Register};
 
+#[cfg(any(feature = "connector-emulator", feature = "connector-rpi"))]
+mod connectors;
+
 /// Represents the pins of the TPIC6C596 shift register.
 #[derive(Debug, Clone, Copy)]
 pub enum Pin {
@@ -61,6 +68,73 @@ pub enum Pin {
     Data,
     /// Latch pin.
     Latch,
+}
+
+#[cfg(any(feature = "connector-emulator", feature = "connector-rpi"))]
+/// Pin container.
+#[derive(Debug, Default)]
+struct Pins<T> {
+    /// Clock pin.
+    clock: T,
+    /// Control pin.
+    control: T,
+    /// Data pin.
+    data: T,
+    /// Latch pin.
+    latch: T,
+}
+
+#[cfg(any(feature = "connector-emulator", feature = "connector-rpi"))]
+impl<T> Pins<T> {
+    /// Get a ref to a pin value.
+    ///
+    /// For `Copy` types see `get/1`.
+    #[must_use]
+    pub const fn get_ref(&self, pin: Pin) -> &T {
+        match pin {
+            Pin::Clock => &self.clock,
+            Pin::Control => &self.control,
+            Pin::Data => &self.data,
+            Pin::Latch => &self.latch,
+        }
+    }
+
+    /// Get a mutable ref to a pin value.
+    ///
+    /// See also: `set/2`.
+    #[must_use]
+    pub fn get_mut(&mut self, pin: Pin) -> &mut T {
+        match pin {
+            Pin::Clock => &mut self.clock,
+            Pin::Control => &mut self.control,
+            Pin::Data => &mut self.data,
+            Pin::Latch => &mut self.latch,
+        }
+    }
+
+    /// Set a pin value.
+    pub fn set(&mut self, pin: Pin, value: T) {
+        match pin {
+            Pin::Clock => self.clock = value,
+            Pin::Control => self.control = value,
+            Pin::Data => self.data = value,
+            Pin::Latch => self.latch = value,
+        }
+    }
+}
+
+#[cfg(any(feature = "connector-emulator", feature = "connector-rpi"))]
+impl<T: Copy> Pins<T> {
+    /// Get a pin value.
+    #[must_use]
+    pub const fn get(&self, pin: Pin) -> T {
+        match pin {
+            Pin::Clock => self.clock,
+            Pin::Control => self.control,
+            Pin::Data => self.data,
+            Pin::Latch => self.latch,
+        }
+    }
 }
 
 /// Connector between the controller and IO pins.
