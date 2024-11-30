@@ -1,8 +1,51 @@
 //! Control TPIC6C596 power logic 8-bit shift register.
+//!
+//! This crate provides a `Controller` to manage a chain of TPIC6C596 shift registers.
+//! The controller can turn the registers on and off, shift bits into the registers,
+//! and reset the registers. It uses a `Connector` trait to abstract the connection
+//! to the actual hardware pins.
+//!
+//! # Features
+//!
+//! - `emulator`: Enables an emulator for testing purposes. When this feature is enabled,
+//!   the `Emulator` and `Register` types are available for use.
+//! - `delay`: Adds a small delay after latching to ensure the TPIC6C596 properly detects
+//!   the latch. This feature is useful for certain hardware configurations that require
+//!   a delay to function correctly.
+//!
+//! # Example
+//!
+//! ```rust
+//! use tpic6c596::{Controller, Connector, Pin};
+//!
+//! struct MyConnector;
+//!
+//! impl Connector for MyConnector {
+//!     fn set(&mut self, pin: Pin, state: bool) {
+//!         // Set the pin state
+//!     }
+//!
+//!     fn get(&self, pin: Pin) -> bool {
+//!         // Get the pin state
+//!         false
+//!     }
+//! }
+//!
+//! let connector = MyConnector;
+//! let mut controller = Controller::connect(connector, 3);
+//! controller.on();
+//! controller.shift(0b10101010, 8);
+//! controller.off();
+//! ```
+//!
+//! # Testing
+//!
+//! When the `emulator` feature is enabled, the crate includes tests that use the `Emulator`
+//! to verify the functionality of the `Controller`. These tests ensure that the controller
+//! correctly shifts bits, turns the registers on and off, and resets the registers.
 
 #[cfg(feature = "emulator")]
 mod emulator;
-use std::{thread::sleep, time::Duration};
 
 #[cfg(feature = "emulator")]
 pub use emulator::{Emulator, Register};
