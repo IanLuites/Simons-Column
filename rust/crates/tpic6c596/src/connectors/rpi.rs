@@ -6,7 +6,7 @@ use crate::{Connector, Pin, Pins};
 
 /// Raspberry Pi GPIO connector using `rppal` crate.
 #[derive(Debug)]
-struct RPi(Pins<OutputPin>);
+pub struct RPi(Pins<OutputPin>);
 
 impl Connector for RPi {
     fn get(&self, pin: Pin) -> bool {

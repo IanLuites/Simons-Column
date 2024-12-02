@@ -6,7 +6,7 @@ use crate::{Connector, Pin, Pins};
 
 ///  Emulator connector.
 #[derive(Debug)]
-struct Emulator {
+pub struct Emulator {
     /// Socket
     socket: UnixDatagram,
 

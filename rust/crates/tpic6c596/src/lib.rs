@@ -70,10 +70,11 @@ pub enum Pin {
     Latch,
 }
 
-#[cfg(any(feature = "connector-emulator", feature = "connector-rpi"))]
-/// Pin container.
+/// Represents a set of pins in the TPIC6C596 emulator.
+///
+/// The `Pins` struct holds a state for the clock, control, data, and latch pins.
 #[derive(Debug, Default)]
-struct Pins<T> {
+pub struct Pins<T> {
     /// Clock pin.
     clock: T,
     /// Control pin.

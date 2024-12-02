@@ -1,6 +1,6 @@
 //! Emulator for testing
 
-use crate::Pin;
+use crate::{Pin, Pins};
 
 /// Represents a register in the TPIC6C596 emulator.
 ///
@@ -67,56 +67,15 @@ impl Register {
     }
 }
 
-/// Represents a set of pins in the TPIC6C596 emulator.
-///
-/// The `PinSet` struct holds the state of the clock, control, data, and latch pins.
-#[derive(Debug, Default)]
-struct PinSet<T> {
-    /// Clock pin value.
-    clock: T,
-
-    /// Control pin value.
-    control: T,
-
-    /// Data pin value.
-    data: T,
-
-    /// Latch pin value.
-    latch: T,
-}
-
-impl<T> PinSet<T> {
-    /// Get pin value.
-    #[must_use]
-    pub const fn get(&self, pin: Pin) -> &T {
-        match pin {
-            Pin::Clock => &self.clock,
-            Pin::Control => &self.control,
-            Pin::Data => &self.data,
-            Pin::Latch => &self.latch,
-        }
-    }
-
-    /// Set pin value.
-    pub fn set(&mut self, pin: Pin, value: T) {
-        match pin {
-            Pin::Clock => self.clock = value,
-            Pin::Control => self.control = value,
-            Pin::Data => self.data = value,
-            Pin::Latch => self.latch = value,
-        }
-    }
-}
-
 /// Represents an emulator for the TPIC6C596 shift registers.
 ///
 /// The `Emulator` struct provides methods to manipulate and test the behavior of the TPIC6C596 shift register.
 /// It holds the state of the pins and registers, and allows for setting pin states and retrieving register states.
 #[derive(Debug)]
 pub struct Emulator {
-    /// A set of pins represented as a `PinSet` of boolean values.
+    /// A set of pins represented as a `Pins` of boolean values.
     /// Each pin can be either `true` (high) or `false` (low).
-    pins: PinSet<bool>,
+    pins: Pins<bool>,
 
     /// Chain of registers.
     registers: Vec<Register>,
@@ -135,7 +94,7 @@ impl Emulator {
     #[must_use]
     pub fn new(chain: usize) -> Self {
         Self {
-            pins: PinSet::default(),
+            pins: Pins::default(),
             registers: vec![Register::new(0); chain],
         }
     }
@@ -147,7 +106,7 @@ impl Emulator {
     /// * `pin` - The pin to set.
     /// * `state` - The state to set the pin to (`true` for high, `false` for low).
     pub fn set_pin(&mut self, pin: Pin, state: bool) {
-        if *self.pins.get(pin) != state {
+        if self.pins.get(pin) != state {
             self.pins.set(pin, state);
 
             match (pin, state) {
@@ -182,7 +141,7 @@ impl Emulator {
     /// * `pin` - The pin to set.
     #[must_use]
     pub const fn get_pin(&self, pin: Pin) -> bool {
-        *self.pins.get(pin)
+        self.pins.get(pin)
     }
 
     /// Checks if the control pin is on.
