@@ -1,0 +1,24 @@
+[package]
+  description = "Daemon to control lights."
+  name = "daemon"
+  version = "0.1.0"
+
+  authors.workspace = true
+  documentation.workspace = true
+  edition.workspace = true
+  homepage.workspace = true
+  license.workspace = true
+  readme.workspace = true
+  repository.workspace = true
+
+[lints]
+  workspace = true
+
+[features]
+  default = ["emulator"]
+
+  emulator = ["tpic6c596/connector-emulator"]
+  rpi = ["tpic6c596/connector-rpi"]
+
+[dependencies]
+  tpic6c596 = { workspace = true }
