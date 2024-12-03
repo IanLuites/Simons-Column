@@ -85,7 +85,6 @@ pub struct Pins<T> {
     latch: T,
 }
 
-#[cfg(any(feature = "connector-emulator", feature = "connector-rpi"))]
 impl<T> Pins<T> {
     /// Get a ref to a pin value.
     ///
@@ -124,7 +123,6 @@ impl<T> Pins<T> {
     }
 }
 
-#[cfg(any(feature = "connector-emulator", feature = "connector-rpi"))]
 impl<T: Copy> Pins<T> {
     /// Get a pin value.
     #[must_use]
