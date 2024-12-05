@@ -1,0 +1,3 @@
+//! Lights library
+
+mod controller;

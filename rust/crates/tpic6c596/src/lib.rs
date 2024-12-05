@@ -55,7 +55,7 @@ mod emulator;
 pub use emulator::{Emulator, Register};
 
 #[cfg(any(feature = "connector-emulator", feature = "connector-rpi"))]
-mod connectors;
+pub mod connectors;
 
 /// Represents the pins of the TPIC6C596 shift register.
 #[derive(Debug, Clone, Copy)]
@@ -245,6 +245,10 @@ fn shift<C: Connector>(connector: &mut C, mut data: u64, len: usize) {
         connector.set(Pin::Clock, false);
         connector.set(Pin::Data, data & 0b1 == 1);
         connector.set(Pin::Clock, true);
+
+        while !connector.get(Pin::Clock) {}
+        // #[cfg(feature = "delay")]
+        // std::thread::sleep(LATCH_DELAY);
 
         data >>= 1;
     }

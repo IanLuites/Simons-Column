@@ -37,14 +37,19 @@ impl crate::Controller<RPi> {
     ) -> Result<Self, rppal::gpio::Error> {
         let gpio = Gpio::new()?;
 
-        Ok(Self::connect(
-            RPi(Pins {
-                data: gpio.get(data_pin)?.into_output_low(),
-                clock: gpio.get(clock_pin)?.into_output_low(),
-                latch: gpio.get(latch_pin)?.into_output_low(),
-                control: gpio.get(control_pin)?.into_output_low(),
-            }),
-            chain,
-        ))
+        let connector = RPi(Pins {
+            data: gpio.get(data_pin)?.into_output_low(),
+            clock: gpio.get(clock_pin)?.into_output_low(),
+            latch: gpio.get(latch_pin)?.into_output_low(),
+            control: gpio.get(control_pin)?.into_output_low(),
+        });
+
+        eprintln!("RPi connect:");
+        eprintln!("  Data:    {}", connector.0.data.pin());
+        eprintln!("  Clock:   {}", connector.0.clock.pin());
+        eprintln!("  Latch:   {}", connector.0.latch.pin());
+        eprintln!("  Control: {}", connector.0.control.pin());
+
+        Ok(Self::connect(connector, chain))
     }
 }

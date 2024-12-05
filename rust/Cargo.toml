@@ -1,6 +1,6 @@
 [workspace]
   default-members = []
-  members = ["bin/*", "crates/*"]
+  members = ["bin/*", "crates/*", "libs/*"]
   resolver = "2"
 
   [workspace.dependencies]
